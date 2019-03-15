@@ -1,4 +1,4 @@
-import React, { Component } from "react";
+import React, { Component } from "react"
 import Like from "./common/like";
 import { getMovies } from "../services/fakeMovieService";
 
