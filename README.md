@@ -1,4 +1,4 @@
-This Project is the Front End of a Video Renting Application called VidFlix made using ReactJS and Redux
+This Project is the Front End of a Video Renting Application called VidFlix made using ReactJS and Redux.
 
 This project was bootstrapped with [Create React App](https://github.com/facebookincubator/create-react-app).
 
