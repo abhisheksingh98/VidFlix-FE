@@ -1,14 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import './_videoHorizontal.scss'
 
 import { AiFillEye } from 'react-icons/ai'
-import request from '../../api'
-
 import moment from 'moment'
 import numeral from 'numeral'
 import { LazyLoadImage } from 'react-lazy-load-image-component'
 import { Col, Row } from 'react-bootstrap'
 import { useHistory } from 'react-router-dom'
+import { getChannelById } from '../../data/mockData'
 
 const VideoHorizontal = ({ video, searchScreen, subScreen }) => {
    const {
@@ -22,55 +21,37 @@ const VideoHorizontal = ({ video, searchScreen, subScreen }) => {
          thumbnails: { medium },
          resourceId,
       },
+      statistics,
+      contentDetails,
    } = video
 
    const isVideo = !(id.kind === 'youtube#channel' || subScreen)
 
-   const [views, setViews] = useState(null)
-   const [duration, setDuration] = useState(null)
-   const [channelIcon, setChannelIcon] = useState(null)
+   // Parse ISO 8601 duration (e.g. PT31M05S)
+   const parseDuration = iso => {
+      const match = iso?.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+      if (!match) return '0:00'
+      const h = parseInt(match[1] || 0)
+      const m = parseInt(match[2] || 0)
+      const s = parseInt(match[3] || 0)
+      const totalSeconds = h * 3600 + m * 60 + s
+      return moment.utc(totalSeconds * 1000).format(h > 0 ? 'H:mm:ss' : 'm:ss')
+   }
 
-   useEffect(() => {
-      const get_video_details = async () => {
-         const {
-            data: { items },
-         } = await request('/videos', {
-            params: {
-               part: 'contentDetails,statistics',
-               id: id.videoId,
-            },
-         })
-         setDuration(items[0].contentDetails.duration)
-         setViews(items[0].statistics.viewCount)
-      }
-      if (isVideo) get_video_details()
-   }, [id, isVideo])
+   const _duration = parseDuration(contentDetails?.duration)
+   const views = statistics?.viewCount || '0'
 
-   useEffect(() => {
-      const get_channel_icon = async () => {
-         const {
-            data: { items },
-         } = await request('/channels', {
-            params: {
-               part: 'snippet',
-               id: channelId,
-            },
-         })
-         setChannelIcon(items[0].snippet.thumbnails.default)
-      }
-      get_channel_icon()
-   }, [channelId])
-
-   const seconds = moment.duration(duration).asSeconds()
-   const _duration = moment.utc(seconds * 1000).format('mm:ss')
+   // Channel icon from local mock data — no API call
+   const channelIcon = getChannelById(channelId)?.snippet?.thumbnails?.default
 
    const history = useHistory()
 
    const _channelId = resourceId?.channelId || channelId
+   const _videoId = id?.videoId || id
 
    const handleClick = () => {
       isVideo
-         ? history.push(`/watch/${id.videoId}`)
+         ? history.push(`/watch/${_videoId}`)
          : history.push(`/channel/${_channelId}`)
    }
 
@@ -80,7 +61,6 @@ const VideoHorizontal = ({ video, searchScreen, subScreen }) => {
       <Row
          className='py-2 m-1 videoHorizontal align-items-center'
          onClick={handleClick}>
-         {/* //TODO refractor grid */}
          <Col
             xs={6}
             md={searchScreen || subScreen ? 4 : 6}
@@ -120,7 +100,7 @@ const VideoHorizontal = ({ video, searchScreen, subScreen }) => {
             </div>
             {subScreen && (
                <p className='mt-2'>
-                  {video.contentDetails.totalItemCount} Videos
+                  {video.contentDetails?.totalItemCount} Videos
                </p>
             )}
          </Col>

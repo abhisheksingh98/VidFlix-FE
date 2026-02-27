@@ -9,6 +9,7 @@ import { useDispatch, useSelector } from 'react-redux'
 import {
    checkSubscriptionStatus,
    getChannelDetails,
+   toggleSubscription,
 } from '../../redux/actions/channel.action'
 import HelmetCustom from '../HelmetCustom'
 const VideoMetaData = ({ video: { snippet, statistics }, videoId }) => {
@@ -74,9 +75,9 @@ const VideoMetaData = ({ video: { snippet, statistics }, videoId }) => {
             </div>
 
             <button
-               className={`p-2 m-2 border-0 btn ${
-                  subscriptionStatus && 'btn-gray'
-               }`}>
+               onClick={() => dispatch(toggleSubscription(channelId, subscriptionStatus))}
+               className={`p-2 m-2 border-0 btn ${subscriptionStatus && 'btn-gray'
+                  }`}>
                {subscriptionStatus ? 'Subscribed' : 'Subscribe'}
             </button>
          </div>

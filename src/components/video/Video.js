@@ -1,13 +1,13 @@
-import React, { useEffect, useState } from 'react'
+import React from 'react'
 import './_video.scss'
 
 import { AiFillEye } from 'react-icons/ai'
-import request from '../../api'
-
 import moment from 'moment'
 import numeral from 'numeral'
 import { LazyLoadImage } from 'react-lazy-load-image-component'
 import { useHistory } from 'react-router-dom'
+import { getChannelById } from '../../data/mockData'
+
 const Video = ({ video, channelScreen }) => {
    const {
       id,
@@ -18,50 +18,31 @@ const Video = ({ video, channelScreen }) => {
          publishedAt,
          thumbnails: { medium },
       },
+      statistics,
       contentDetails,
    } = video
 
-   const [views, setViews] = useState(null)
-   const [duration, setDuration] = useState(null)
-   const [channelIcon, setChannelIcon] = useState(null)
-
-   const seconds = moment.duration(duration).asSeconds()
-   const _duration = moment.utc(seconds * 1000).format('mm:ss')
-
+   // Support both raw id string and shaped { videoId } object
    const _videoId = id?.videoId || contentDetails?.videoId || id
 
+   // Duration — parse ISO 8601 (e.g. PT18M42S)
+   const parseDuration = iso => {
+      const match = iso?.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)
+      if (!match) return '0:00'
+      const h = parseInt(match[1] || 0)
+      const m = parseInt(match[2] || 0)
+      const s = parseInt(match[3] || 0)
+      const totalSeconds = h * 3600 + m * 60 + s
+      return moment.utc(totalSeconds * 1000).format(h > 0 ? 'H:mm:ss' : 'm:ss')
+   }
+
+   const _duration = parseDuration(contentDetails?.duration)
+   const views = statistics?.viewCount || '0'
+
+   // Channel icon from local mock data (no API call)
+   const channelIcon = getChannelById(channelId)?.snippet?.thumbnails?.default
+
    const history = useHistory()
-
-   useEffect(() => {
-      const get_video_details = async () => {
-         const {
-            data: { items },
-         } = await request('/videos', {
-            params: {
-               part: 'contentDetails,statistics',
-               id: _videoId,
-            },
-         })
-         setDuration(items[0].contentDetails.duration)
-         setViews(items[0].statistics.viewCount)
-      }
-      get_video_details()
-   }, [_videoId])
-
-   useEffect(() => {
-      const get_channel_icon = async () => {
-         const {
-            data: { items },
-         } = await request('/channels', {
-            params: {
-               part: 'snippet',
-               id: channelId,
-            },
-         })
-         setChannelIcon(items[0].snippet.thumbnails.default)
-      }
-      get_channel_icon()
-   }, [channelId])
 
    const handleVideoClick = () => {
       history.push(`/watch/${_videoId}`)
@@ -70,7 +51,6 @@ const Video = ({ video, channelScreen }) => {
    return (
       <div className='video' onClick={handleVideoClick}>
          <div className='video__top'>
-            {/* <img src={medium.url} alt='' /> */}
             <LazyLoadImage src={medium.url} effect='blur' />
             <span className='video__top__duration'>{_duration}</span>
          </div>
@@ -84,7 +64,6 @@ const Video = ({ video, channelScreen }) => {
          {!channelScreen && (
             <div className='video__channel'>
                <LazyLoadImage src={channelIcon?.url} effect='blur' />
-
                <p>{channelTitle}</p>
             </div>
          )}

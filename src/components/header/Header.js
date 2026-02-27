@@ -7,6 +7,21 @@ import { MdNotifications, MdApps } from 'react-icons/md'
 import { useHistory } from 'react-router-dom'
 import { useSelector } from 'react-redux'
 
+// Inline SVG logo — no external CDN dependency
+const VidFlixLogo = () => (
+   <svg
+      className='header__logo'
+      width='110'
+      height='28'
+      viewBox='0 0 110 28'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'>
+      <rect width='28' height='28' rx='4' fill='#FF0000' />
+      <polygon points='10,7 10,21 22,14' fill='white' />
+      <text x='34' y='21' fontFamily='Arial, sans-serif' fontWeight='700' fontSize='16' fill='white'>VidFlix</text>
+   </svg>
+)
+
 const Header = ({ handleToggleSidebar }) => {
    const [input, setInput] = useState('')
 
@@ -14,8 +29,7 @@ const Header = ({ handleToggleSidebar }) => {
 
    const handleSubmit = e => {
       e.preventDefault()
-
-      history.push(`/search/${input}`)
+      if (input.trim()) history.push(`/search/${input.trim()}`)
    }
    const user = useSelector(state => state.auth?.user)
 
@@ -27,11 +41,7 @@ const Header = ({ handleToggleSidebar }) => {
             onClick={() => handleToggleSidebar()}
          />
 
-         <img
-            src='http://pngimg.com/uploads/youtube/youtube_PNG2.png'
-            alt=''
-            className='header__logo'
-         />
+         <VidFlixLogo />
 
          <form onSubmit={handleSubmit}>
             <input
@@ -48,7 +58,13 @@ const Header = ({ handleToggleSidebar }) => {
          <div className='header__icons'>
             <MdNotifications size={28} />
             <MdApps size={28} />
-            <img src={user?.photoURL} alt='avatar' />
+            {user?.photoURL ? (
+               <img src={user.photoURL} alt='avatar' />
+            ) : (
+               <div className='header__avatar-placeholder'>
+                  {user?.name?.charAt(0) || 'U'}
+               </div>
+            )}
          </div>
       </div>
    )

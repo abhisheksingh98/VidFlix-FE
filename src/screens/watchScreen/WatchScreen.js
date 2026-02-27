@@ -13,6 +13,20 @@ import {
 } from '../../redux/actions/videos.action'
 import './watchScreen.scss'
 
+// Offline video player — shows a stylised placeholder with the mock title
+const OfflineVideoPlayer = ({ title }) => (
+   <div className='watchScreen__offlinePlayer'>
+      <div className='watchScreen__offlinePlayer-inner'>
+         <svg width='64' height='64' viewBox='0 0 64 64' fill='none'>
+            <circle cx='32' cy='32' r='32' fill='rgba(255,255,255,0.08)' />
+            <polygon points='24,18 24,46 50,32' fill='white' opacity='0.9' />
+         </svg>
+         <p>{title || 'Offline Video Player'}</p>
+         <span>This is an offline demo — no external video stream required.</span>
+      </div>
+   </div>
+)
+
 const WatchScreen = () => {
    const { id } = useParams()
 
@@ -20,7 +34,6 @@ const WatchScreen = () => {
 
    useEffect(() => {
       dispatch(getVideoById(id))
-
       dispatch(getRelatedVideos(id))
    }, [dispatch, id])
 
@@ -33,17 +46,11 @@ const WatchScreen = () => {
    return (
       <Row>
          <Helmet>
-            <title>{video?.snippet?.title}</title>
+            <title>{video?.snippet?.title || 'VidFlix'}</title>
          </Helmet>
          <Col lg={8}>
             <div className='watchScreen__player'>
-               <iframe
-                  src={`https://www.youtube.com/embed/${id}`}
-                  frameBorder='0'
-                  title={video?.snippet?.title}
-                  allowFullScreen
-                  width='100%'
-                  height='100%'></iframe>
+               <OfflineVideoPlayer title={video?.snippet?.title} />
             </div>
             {!loading ? (
                <VideoMetaData video={video} videoId={id} />
@@ -57,11 +64,11 @@ const WatchScreen = () => {
             />
          </Col>
          <Col lg={4}>
-            {!loading ? (
+            {!relatedVideosLoading ? (
                videos
                   ?.filter(video => video.snippet)
                   .map(video => (
-                     <VideoHorizontal video={video} key={video.id.videoId} />
+                     <VideoHorizontal video={video} key={video.id?.videoId || video.id} />
                   ))
             ) : (
                <SkeletonTheme color='#343a40' highlightColor='#3c4147'>

@@ -1,4 +1,3 @@
-import request from '../../api'
 import {
    COMMENT_LIST_FAIL,
    COMMENT_LIST_REQUEST,
@@ -7,62 +6,36 @@ import {
    CREATE_COMMENT_SUCCESS,
 } from '../actionType'
 
+import { getCommentsForVideo, saveCommentForVideo } from '../../data/mockData'
+
+const delay = (ms = 250) => new Promise(resolve => setTimeout(resolve, ms))
+
 export const getCommentsOfVideoById = id => async dispatch => {
    try {
-      dispatch({
-         type: COMMENT_LIST_REQUEST,
-      })
+      dispatch({ type: COMMENT_LIST_REQUEST })
+      await delay()
 
-      const { data } = await request('/commentThreads', {
-         params: {
-            part: 'snippet',
-            videoId: id,
-         },
-      })
-      dispatch({
-         type: COMMENT_LIST_SUCCESS,
-         payload: data.items,
-      })
+      const items = getCommentsForVideo(id)
+      dispatch({ type: COMMENT_LIST_SUCCESS, payload: items })
    } catch (error) {
-      console.log(error.response.data)
-      dispatch({
-         type: COMMENT_LIST_FAIL,
-         payload: error.response.data.message,
-      })
+      console.error(error.message)
+      dispatch({ type: COMMENT_LIST_FAIL, payload: error.message })
    }
 }
 
 export const addComment = (id, text) => async (dispatch, getState) => {
    try {
-      const obj = {
-         snippet: {
-            videoId: id,
-            topLevelComment: {
-               snippet: {
-                  textOriginal: text,
-               },
-            },
-         },
-      }
+      const { user } = getState().auth
+      const name = user?.name || 'Anonymous'
+      const photo = user?.photoURL || 'https://picsum.photos/seed/anon-av/40/40'
 
-      await request.post('/commentThreads', obj, {
-         params: {
-            part: 'snippet',
-         },
-         headers: {
-            Authorization: `Bearer ${getState().auth.accessToken}`,
-         },
-      })
-      dispatch({
-         type: CREATE_COMMENT_SUCCESS,
-      })
+      saveCommentForVideo(id, name, photo, text)
+      dispatch({ type: CREATE_COMMENT_SUCCESS })
 
-      setTimeout(() => dispatch(getCommentsOfVideoById(id)), 3000)
+      // Immediately reload comments (no artificial 3-second delay)
+      dispatch(getCommentsOfVideoById(id))
    } catch (error) {
-      console.log(error.response.data)
-      dispatch({
-         type: CREATE_COMMENT_FAIL,
-         payload: error.response.data.message,
-      })
+      console.error(error.message)
+      dispatch({ type: CREATE_COMMENT_FAIL, payload: error.message })
    }
 }

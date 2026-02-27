@@ -31,4 +31,71 @@
       height: 130px;
       object-fit: contain;
    }
+
+   &__subtitle {
+      color: $text-color;
+      margin-bottom: 2rem;
+   }
+
+   &__profiles {
+      display: flex;
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+   }
+
+   &__profile {
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 1rem;
+      border-radius: 8px;
+      transition: background 0.2s;
+      border: 2px solid transparent;
+
+      &:hover {
+         background: rgba(255, 255, 255, 0.05);
+      }
+
+      &--active {
+         background: rgba(255, 255, 255, 0.1);
+         border-color: #ff0000;
+      }
+
+      img {
+         width: 80px;
+         height: 80px;
+         margin-bottom: 0.5rem;
+      }
+
+      span {
+         color: $text-color;
+         font-size: 0.9rem;
+         font-weight: 500;
+      }
+   }
+
+   &__btn {
+      background: #ff0000;
+      color: #fff;
+      padding: 0.8rem 2rem !important;
+      font-size: 1.1rem;
+      font-weight: 600;
+      transition: background 0.2s;
+
+      &:hover:not(:disabled) {
+         background: #cc0000;
+      }
+
+      &:disabled {
+         opacity: 0.5;
+         cursor: not-allowed;
+      }
+   }
+
+   &__note {
+      color: $text-color;
+      opacity: 0.6;
+      font-size: 0.8rem;
+   }
 }

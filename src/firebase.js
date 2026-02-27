@@ -1,17 +1,11 @@
-import firebase from "firebase/app";
+// firebase.js — offline stub: replaces Firebase Auth entirely
+// signInWithPopup and signOut are no-ops; credential uses local fake data.
 
-import "firebase/auth";
+const auth = {
+  signInWithPopup: async () => {
+    throw new Error('Firebase removed — use local login instead')
+  },
+  signOut: async () => { },
+}
 
-const firebaseConfig = {
-  apiKey: "AIzaSyDds4IY2i05CAi-7__ODMEGsYD_pPcPmTg",
-  authDomain: "videolibrary-26897.firebaseapp.com",
-  projectId: "videolibrary-26897",
-  storageBucket: "videolibrary-26897.appspot.com",
-  messagingSenderId: "647730957977",
-  appId: "1:647730957977:web:a5cf31fe42acacb288b208",
-  measurementId: "G-0BWDDJM9PH",
-};
-
-firebase.initializeApp(firebaseConfig);
-
-export default firebase.auth();
+export default auth

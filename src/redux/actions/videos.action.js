@@ -19,215 +19,152 @@ import {
    SUBSCRIPTIONS_CHANNEL_SUCCESS,
 } from '../actionType'
 
-import request from '../../api'
+import {
+   MOCK_VIDEOS,
+   MOCK_SUBSCRIPTIONS,
+   PLAYLIST_MAP,
+   getVideoById as _getVideoById,
+   getVideosByChannelId,
+   searchVideos,
+   getVideosByCategory as _getVideosByCategory,
+   getRelatedVideos as _getRelatedVideos,
+} from '../../data/mockData'
+
+const PAGE_SIZE = 12
+
+// Simulate a brief async wait so loading skeletons are visible
+const delay = (ms = 300) => new Promise(resolve => setTimeout(resolve, ms))
 
 export const getPopularVideos = () => async (dispatch, getState) => {
    try {
-      dispatch({
-         type: HOME_VIDEOS_REQUEST,
-      })
-      const { data } = await request('/videos', {
-         params: {
-            part: 'snippet,contentDetails,statistics',
-            chart: 'mostPopular',
-            regionCode: 'IN',
-            maxResults: 20,
-            pageToken: getState().homeVideos.nextPageToken,
-         },
-      })
+      dispatch({ type: HOME_VIDEOS_REQUEST })
+      await delay()
+
+      const pageToken = getState().homeVideos.nextPageToken || 0
+      const start = Number(pageToken)
+      const page = MOCK_VIDEOS.slice(start, start + PAGE_SIZE)
+      const nextPageToken = start + PAGE_SIZE < MOCK_VIDEOS.length
+         ? start + PAGE_SIZE
+         : null
 
       dispatch({
          type: HOME_VIDEOS_SUCCESS,
          payload: {
-            videos: data.items,
-            nextPageToken: data.nextPageToken,
+            videos: page,
+            nextPageToken,
             category: 'All',
          },
       })
    } catch (error) {
-      console.log(error.message)
-      dispatch({
-         type: HOME_VIDEOS_FAIL,
-         payload: error.message,
-      })
+      console.error(error.message)
+      dispatch({ type: HOME_VIDEOS_FAIL, payload: error.message })
    }
 }
 
 export const getVideosByCategory = keyword => async (dispatch, getState) => {
    try {
-      dispatch({
-         type: HOME_VIDEOS_REQUEST,
-      })
-      const { data } = await request('/search', {
-         params: {
-            part: 'snippet',
+      dispatch({ type: HOME_VIDEOS_REQUEST })
+      await delay()
 
-            maxResults: 20,
-            pageToken: getState().homeVideos.nextPageToken,
-            q: keyword,
-            type: 'video',
-         },
-      })
+      const all = _getVideosByCategory(keyword)
+      const pageToken = getState().homeVideos.nextPageToken || 0
+      const start = Number(pageToken)
+      const page = all.slice(start, start + PAGE_SIZE)
+      const nextPageToken = start + PAGE_SIZE < all.length ? start + PAGE_SIZE : null
 
       dispatch({
          type: HOME_VIDEOS_SUCCESS,
          payload: {
-            videos: data.items,
-            nextPageToken: data.nextPageToken,
+            videos: page,
+            nextPageToken,
             category: keyword,
          },
       })
    } catch (error) {
-      console.log(error.message)
-      dispatch({
-         type: HOME_VIDEOS_FAIL,
-         payload: error.message,
-      })
+      console.error(error.message)
+      dispatch({ type: HOME_VIDEOS_FAIL, payload: error.message })
    }
 }
 
 export const getVideoById = id => async dispatch => {
    try {
-      dispatch({
-         type: SELECTED_VIDEO_REQUEST,
-      })
+      dispatch({ type: SELECTED_VIDEO_REQUEST })
+      await delay()
 
-      const { data } = await request('/videos', {
-         params: {
-            part: 'snippet,statistics',
-            id: id,
-         },
-      })
-      dispatch({
-         type: SELECTED_VIDEO_SUCCESS,
-         payload: data.items[0],
-      })
+      const video = _getVideoById(id)
+      if (!video) throw new Error(`Video ${id} not found`)
+
+      dispatch({ type: SELECTED_VIDEO_SUCCESS, payload: video })
    } catch (error) {
-      console.log(error.message)
-      dispatch({
-         type: SELECTED_VIDEO_FAIL,
-         payload: error.message,
-      })
+      console.error(error.message)
+      dispatch({ type: SELECTED_VIDEO_FAIL, payload: error.message })
    }
 }
 
 export const getRelatedVideos = id => async dispatch => {
    try {
-      dispatch({
-         type: RELATED_VIDEO_REQUEST,
-      })
+      dispatch({ type: RELATED_VIDEO_REQUEST })
+      await delay()
 
-      const { data } = await request('/search', {
-         params: {
-            part: 'snippet',
-            relatedToVideoId: id,
-            maxResults: 15,
-            type: 'video',
-         },
-      })
-      dispatch({
-         type: RELATED_VIDEO_SUCCESS,
-         payload: data.items,
-      })
+      const related = _getRelatedVideos(id)
+      // Shape them as search results so VideoHorizontal works correctly
+      const shaped = related.map(v => ({
+         ...v,
+         id: { kind: 'youtube#video', videoId: v.id },
+      }))
+
+      dispatch({ type: RELATED_VIDEO_SUCCESS, payload: shaped })
    } catch (error) {
-      console.log(error.response.data.message)
-      dispatch({
-         type: RELATED_VIDEO_FAIL,
-         payload: error.response.data.message,
-      })
+      console.error(error.message)
+      dispatch({ type: RELATED_VIDEO_FAIL, payload: error.message })
    }
 }
 
 export const getVideosBySearch = keyword => async dispatch => {
    try {
-      dispatch({
-         type: SEARCHED_VIDEO_REQUEST,
-      })
-      const { data } = await request('/search', {
-         params: {
-            part: 'snippet',
+      dispatch({ type: SEARCHED_VIDEO_REQUEST })
+      await delay()
 
-            maxResults: 20,
-            q: keyword,
-            type: 'video,channel',
-         },
-      })
+      const results = searchVideos(keyword)
+      // Shape them like YouTube search results
+      const shaped = results.map(v => ({
+         ...v,
+         id: { kind: 'youtube#video', videoId: v.id },
+      }))
 
-      dispatch({
-         type: SEARCHED_VIDEO_SUCCESS,
-         payload: data.items,
-      })
+      dispatch({ type: SEARCHED_VIDEO_SUCCESS, payload: shaped })
    } catch (error) {
-      console.log(error.message)
-      dispatch({
-         type: SEARCHED_VIDEO_FAIL,
-         payload: error.message,
-      })
+      console.error(error.message)
+      dispatch({ type: SEARCHED_VIDEO_FAIL, payload: error.message })
    }
 }
 
-export const getSubscribedChannels = () => async (dispatch, getState) => {
+export const getSubscribedChannels = () => async dispatch => {
    try {
-      dispatch({
-         type: SUBSCRIPTIONS_CHANNEL_REQUEST,
-      })
-      const { data } = await request('/subscriptions', {
-         params: {
-            part: 'snippet,contentDetails',
-
-            mine: true,
-         },
-         headers: {
-            Authorization: `Bearer ${getState().auth.accessToken}`,
-         },
-      })
-      dispatch({
-         type: SUBSCRIPTIONS_CHANNEL_SUCCESS,
-         payload: data.items,
-      })
+      dispatch({ type: SUBSCRIPTIONS_CHANNEL_REQUEST })
+      await delay()
+      dispatch({ type: SUBSCRIPTIONS_CHANNEL_SUCCESS, payload: MOCK_SUBSCRIPTIONS })
    } catch (error) {
-      console.log(error.response.data)
-      dispatch({
-         type: SUBSCRIPTIONS_CHANNEL_FAIL,
-         payload: error.response.data,
-      })
+      console.error(error.message)
+      dispatch({ type: SUBSCRIPTIONS_CHANNEL_FAIL, payload: error.message })
    }
 }
 
 export const getVideosByChannel = id => async dispatch => {
    try {
-      dispatch({
-         type: CHANNEL_VIDEOS_REQUEST,
-      })
+      dispatch({ type: CHANNEL_VIDEOS_REQUEST })
+      await delay()
 
-      // 1. get upload playlist id
-      const {
-         data: { items },
-      } = await request('/channels', {
-         params: {
-            part: 'contentDetails',
-            id: id,
-         },
-      })
-      const uploadPlaylistId = items[0].contentDetails.relatedPlaylists.uploads
-      // 2. get the videos using the id
-      const { data } = await request('/playlistItems', {
-         params: {
-            part: 'snippet,contentDetails',
-            playlistId: uploadPlaylistId,
-            maxResults: 30,
-         },
-      })
+      const channelVideos = getVideosByChannelId(id)
+      // Shape as playlist items matching the snippet structure expected by Video.js
+      const shaped = channelVideos.map(v => ({
+         ...v,
+         id: { kind: 'youtube#video', videoId: v.id },
+      }))
 
-      dispatch({
-         type: CHANNEL_VIDEOS_SUCCESS,
-         payload: data.items,
-      })
+      dispatch({ type: CHANNEL_VIDEOS_SUCCESS, payload: shaped })
    } catch (error) {
-      console.log(error.response.data.message)
-      dispatch({
-         type: CHANNEL_DETAILS_FAIL,
-         payload: error.response.data,
-      })
+      console.error(error.message)
+      dispatch({ type: CHANNEL_DETAILS_FAIL, payload: error.message })
    }
 }
