@@ -1,36 +1,25 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import './_videoMetaData.scss'
 import moment from 'moment'
 import numeral from 'numeral'
 
 import { MdThumbUp, MdThumbDown } from 'react-icons/md'
 import ShowMoreText from 'react-show-more-text'
-import { useDispatch, useSelector } from 'react-redux'
-import {
-   checkSubscriptionStatus,
-   getChannelDetails,
-   toggleSubscription,
-} from '../../redux/actions/channel.action'
 import HelmetCustom from '../HelmetCustom'
+import { useSubscription } from '../../hooks/useSubscription'
+
 const VideoMetaData = ({ video: { snippet, statistics }, videoId }) => {
    const { channelId, channelTitle, description, title, publishedAt } = snippet
    const { viewCount, likeCount, dislikeCount } = statistics
 
-   const dispatch = useDispatch()
-
    const {
-      snippet: channelSnippet,
-      statistics: channelStatistics,
-   } = useSelector(state => state.channelDetails.channel)
+      channel,
+      subscriptionStatus,
+      toggleSubscription,
+   } = useSubscription(channelId)
 
-   const subscriptionStatus = useSelector(
-      state => state.channelDetails.subscriptionStatus
-   )
-
-   useEffect(() => {
-      dispatch(getChannelDetails(channelId))
-      dispatch(checkSubscriptionStatus(channelId))
-   }, [dispatch, channelId])
+   const channelSnippet = channel?.snippet
+   const channelStatistics = channel?.statistics
 
    return (
       <div className='py-2 videoMetaData'>
@@ -75,7 +64,7 @@ const VideoMetaData = ({ video: { snippet, statistics }, videoId }) => {
             </div>
 
             <button
-               onClick={() => dispatch(toggleSubscription(channelId, subscriptionStatus))}
+               onClick={toggleSubscription}
                className={`p-2 m-2 border-0 btn ${subscriptionStatus && 'btn-gray'
                   }`}>
                {subscriptionStatus ? 'Subscribed' : 'Subscribe'}

@@ -1,19 +1,11 @@
-import React, { useEffect, useState } from 'react'
-import { useDispatch, useSelector } from 'react-redux'
-import {
-   addComment,
-   getCommentsOfVideoById,
-} from '../../redux/actions/comments.action'
+import React, { useState } from 'react'
+import { useSelector } from 'react-redux'
 import Comment from '../comment/Comment'
+import { useComments } from '../../hooks/useComments'
 import './_comments.scss'
+
 const Comments = ({ videoId, totalComments }) => {
-   const dispatch = useDispatch()
-
-   useEffect(() => {
-      dispatch(getCommentsOfVideoById(videoId))
-   }, [videoId, dispatch])
-
-   const comments = useSelector(state => state.commentList.comments)
+   const { comments, addComment } = useComments(videoId)
    const { photoURL } = useSelector(state => state.auth?.user)
 
    const [text, setText] = useState('')
@@ -26,10 +18,10 @@ const Comments = ({ videoId, totalComments }) => {
       e.preventDefault()
       if (text.length === 0) return
 
-      dispatch(addComment(videoId, text))
-
+      addComment(text)
       setText('')
    }
+
    return (
       <div className='comments'>
          <p>{totalComments} Comments</p>

@@ -1,16 +1,13 @@
-import React, { useEffect } from 'react'
+import React from 'react'
 import { Col, Row } from 'react-bootstrap'
 import Skeleton, { SkeletonTheme } from 'react-loading-skeleton'
-import { useDispatch, useSelector } from 'react-redux'
+import { useSelector } from 'react-redux'
 import { useParams } from 'react-router-dom'
 import Comments from '../../components/comments/Comments'
 import VideoHorizontal from '../../components/videoHorizontal/VideoHorizontal'
 import VideoMetaData from '../../components/videoMetaData/VideoMetaData'
 import { Helmet } from 'react-helmet'
-import {
-   getRelatedVideos,
-   getVideoById,
-} from '../../redux/actions/videos.action'
+import { useVideoDetails } from '../../hooks/useVideoDetails'
 import './watchScreen.scss'
 
 // Offline video player — shows a stylised placeholder with the mock title
@@ -30,18 +27,12 @@ const OfflineVideoPlayer = ({ title }) => (
 const WatchScreen = () => {
    const { id } = useParams()
 
-   const dispatch = useDispatch()
-
-   useEffect(() => {
-      dispatch(getVideoById(id))
-      dispatch(getRelatedVideos(id))
-   }, [dispatch, id])
-
-   const { videos, loading: relatedVideosLoading } = useSelector(
-      state => state.relatedVideos
-   )
-
-   const { video, loading } = useSelector(state => state.selectedVideo)
+   const {
+      video,
+      videoLoading,
+      relatedVideos,
+      relatedVideosLoading,
+   } = useVideoDetails(id)
 
    return (
       <Row>
@@ -52,7 +43,7 @@ const WatchScreen = () => {
             <div className='watchScreen__player'>
                <OfflineVideoPlayer title={video?.snippet?.title} />
             </div>
-            {!loading ? (
+            {!videoLoading ? (
                <VideoMetaData video={video} videoId={id} />
             ) : (
                <h6>Loading...</h6>
@@ -65,7 +56,7 @@ const WatchScreen = () => {
          </Col>
          <Col lg={4}>
             {!relatedVideosLoading ? (
-               videos
+               relatedVideos
                   ?.filter(video => video.snippet)
                   .map(video => (
                      <VideoHorizontal video={video} key={video.id?.videoId || video.id} />
